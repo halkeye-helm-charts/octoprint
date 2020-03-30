@@ -5,9 +5,9 @@
 replicaCount: 1
 
 image:
-  repository: nginx
-  tag: stable
-  pullPolicy: IfNotPresent
+  repository: halkeye/octoprint
+  tag: latest
+  pullPolicy: Always
 
 imagePullSecrets: []
 nameOverride: ""
@@ -23,7 +23,10 @@ serviceAccount:
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext:
+  # uses privileged to accses the raw device
+  # not sure which caps are needed otherwise
+  privileged: true
   # capabilities:
   #   drop:
   #   - ALL
@@ -33,7 +36,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 80
+  port: 5000
 
 ingress:
   enabled: false
@@ -66,3 +69,21 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+## Persist configuration to a persistent volume
+persistence:
+  ## database data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If unset, storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  enabled: false
+  existingClaim:
+  storageClassName:
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+
+device: "/dev/ttyACM0"

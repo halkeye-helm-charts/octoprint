@@ -6,6 +6,9 @@ metadata:
 {{ include "octoprint.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "octoprint.name" . }}
@@ -29,9 +32,14 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          #command: ["/bin/sh"]
+          #args: ["-c", "sleep 99d"]
+          env:
+            # need to override the one that services provides
+            - { name: "OCTOPRINT_PORT", value: "5000" }
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 5000
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -43,6 +51,11 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /home/octoprint/.octoprint
+            - name: ttyacm0
+              mountPath: /dev/ttyACM0
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -55,3 +68,14 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "octoprint.fullname" .) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: ttyacm0
+          hostPath:
+            path: {{ .Values.device | quote }}
