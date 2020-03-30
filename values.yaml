@@ -5,9 +5,9 @@
 replicaCount: 1
 
 image:
-  repository: halkeye/octoprint
-  tag: latest
-  pullPolicy: Always
+  repository: octoprint/octoprint
+  tag: 1.4.0
+  pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: ""
